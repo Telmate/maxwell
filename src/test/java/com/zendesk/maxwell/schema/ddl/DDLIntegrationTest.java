@@ -11,6 +11,7 @@ import org.junit.experimental.categories.Category;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class DDLIntegrationTest extends MaxwellTestWithIsolatedServer {
@@ -589,6 +590,19 @@ public class DDLIntegrationTest extends MaxwellTestWithIsolatedServer {
 		};
 
 		testIntegration(sql);
+	}
+
+	@Test
+	public void testCompressionOptions() throws Exception {
+		String [] sql = {
+			"create table t1 ( a int, b varchar(255)) PAGE_COMPRESSED=1",
+			"create table t2 ( a int, b varchar(255)) `PAGE_COMPRESSED`='ON'"
+		};
+
+		for(String alterSQL : sql) {
+			List<SchemaChange> changes = SchemaChange.parse("test", alterSQL);
+			assertNotNull(changes);
+		}
 	}
 
 	@Test
