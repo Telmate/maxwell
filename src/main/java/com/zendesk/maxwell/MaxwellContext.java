@@ -64,6 +64,8 @@ public class MaxwellContext {
 	private BootstrapController bootstrapController;
 	private Thread bootstrapControllerThread;
 
+	private Boolean isMariaDB;
+
 	/**
 	 * Contains various Maxwell metrics
 	 */
@@ -533,7 +535,7 @@ public class MaxwellContext {
 				this.producer = new NatsProducer(this);
 				break;
 			case "pubsub":
-				this.producer = new MaxwellPubsubProducer(this, this.config.pubsubProjectId, this.config.pubsubTopic, this.config.ddlPubsubTopic);
+				this.producer = new MaxwellPubsubProducer(this, this.config.pubsubProjectId, this.config.pubsubTopic, this.config.ddlPubsubTopic, this.config.pubsubMessageOrderingKey, this.config.pubsubEmulator);
 				break;
 			case "profiler":
 				this.producer = new ProfilerProducer(this);
@@ -682,5 +684,21 @@ public class MaxwellContext {
 	 */
 	public MaxwellDiagnosticContext getDiagnosticContext() {
 		return this.diagnosticContext;
+	}
+
+	/**
+	 * Is the replication host running MariaDB?
+	 * @return mariadbornot
+	 */
+	public boolean isMariaDB() {
+		if ( this.isMariaDB == null ) {
+			try ( Connection c = this.getReplicationConnection() ) {
+				this.isMariaDB = MaxwellMysqlStatus.isMaria(c);
+			} catch ( SQLException e ) {
+				return false;
+			}
+		}
+
+		return this.isMariaDB;
 	}
 }

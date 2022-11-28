@@ -218,7 +218,12 @@ See the [AWS docs](http://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/cr
 In case you need to set up a different region also along with credentials then default one, see the [AWS docs](http://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/setup-credentials.html#setup-credentials-setting-region).
 
 ## Options
-Set the output queue in the `config.properties` by setting the `sqs_queue_uri` property to full SQS queue uri from AWS console.
+Set the output queue in the `config.properties` by setting the following properites
+
+- **sqs_signing_region**: the region to use for SigV4 signing of requests. e.g. `us-east-1`
+- **sqs_service_endpoint**: the service endpoint either with or without the protocol (e.g. `https://sns.us-west-1.amazonaws.com` or `sns.us-west-1.amazonaws.com`)
+- **sqs_queue_uri**: the full SQS queue uri from AWS console. e.g. `https://sqs.us-east-1.amazonaws.com/xxxxxxxxxxxx/maxwell`
+
 
 The producer uses the [AWS SQS SDK](http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/sqs/AmazonSQSClient.html).
 
@@ -297,6 +302,7 @@ The remaining configurable properties are:
 - `rabbitmq_user` - defaults to **guest**
 - `rabbitmq_pass` - defaults to **guest**
 - `rabbitmq_virtual_host` - defaults to **/**
+- `rabbitmq_handshake_timeout` - defaults to **10000**
 - `rabbitmq_exchange` - defaults to **maxwell**
 - `rabbitmq_exchange_type` - defaults to **fanout**
 - `rabbitmq_exchange_durable` - defaults to **false**

@@ -4,7 +4,9 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.github.shyiko.mysql.binlog.BinaryLogClient;
+import com.github.shyiko.mysql.binlog.event.AnnotateRowsEventData;
 import com.github.shyiko.mysql.binlog.event.EventType;
+import com.github.shyiko.mysql.binlog.event.MariadbGtidEventData;
 import com.github.shyiko.mysql.binlog.event.QueryEventData;
 import com.github.shyiko.mysql.binlog.event.RowsQueryEventData;
 import com.github.shyiko.mysql.binlog.event.TableMapEventData;
@@ -63,6 +65,7 @@ public class BinlogConnectorReplicator extends RunLoopProcess implements Replica
 	private final HeartbeatNotifier heartbeatNotifier;
 	private Long stopAtHeartbeat;
 	private Filter filter;
+	private Boolean ignoreMissingSchema;
 
 	private final BootstrapController bootstrapper;
 	private final AbstractProducer producer;
@@ -117,6 +120,7 @@ public class BinlogConnectorReplicator extends RunLoopProcess implements Replica
 				heartbeatNotifier,
 				scripting,
 				filter,
+				false,
 				outputConfig,
 				bufferMemoryUsage,
 				replicationReconnectionRetries,
@@ -138,6 +142,7 @@ public class BinlogConnectorReplicator extends RunLoopProcess implements Replica
 		HeartbeatNotifier heartbeatNotifier,
 		Scripting scripting,
 		Filter filter,
+		boolean ignoreMissingSchema,
 		MaxwellOutputConfig outputConfig,
 		float bufferMemoryUsage,
 		int replicationReconnectionRetries,
@@ -154,6 +159,7 @@ public class BinlogConnectorReplicator extends RunLoopProcess implements Replica
 		this.schemaStore = schemaStore;
 		this.tableCache = new TableCache(maxwellSchemaDatabaseName);
 		this.filter = filter;
+		this.ignoreMissingSchema = ignoreMissingSchema;
 		this.lastCommError = null;
 		this.bufferMemoryUsage = bufferMemoryUsage;
 		this.queue = new LinkedBlockingDeque<>(binlogEventQueueSize);
@@ -173,6 +179,7 @@ public class BinlogConnectorReplicator extends RunLoopProcess implements Replica
 		/* setup binlog client */
 		this.client = new BinaryLogClient(mysqlConfig.host, mysqlConfig.port, mysqlConfig.user, mysqlConfig.password);
 		this.client.setSSLMode(mysqlConfig.sslMode);
+		this.client.setUseSendAnnotateRowsEvent(true);
 
 
 		BinlogPosition startBinlog = start.getBinlogPosition();
@@ -583,11 +590,15 @@ public class BinlogConnectorReplicator extends RunLoopProcess implements Replica
 					break;
 				case TABLE_MAP:
 					TableMapEventData data = event.tableMapData();
-					tableCache.processEvent(getSchema(), this.filter, data.getTableId(), data.getDatabase(), data.getTable());
+					tableCache.processEvent(getSchema(), this.filter, this.ignoreMissingSchema, data.getTableId(), data.getDatabase(), data.getTable());
 					break;
 				case ROWS_QUERY:
 					RowsQueryEventData rqed = event.getEvent().getData();
 					currentQuery = rqed.getQuery();
+					break;
+				case ANNOTATE_ROWS:
+					AnnotateRowsEventData ared = event.getEvent().getData();
+					currentQuery = ared.getRowsQuery();
 					break;
 				case QUERY:
 					QueryEventData qe = event.queryData();
@@ -618,6 +629,8 @@ public class BinlogConnectorReplicator extends RunLoopProcess implements Replica
 					} else {
 						LOGGER.warn("Unhandled QueryEvent @ {} inside transaction: {}", event.getPosition().fullPosition(), qe);
 					}
+					break;
+				default:
 					break;
 			}
 		}
@@ -702,7 +715,7 @@ public class BinlogConnectorReplicator extends RunLoopProcess implements Replica
 					break;
 				case TABLE_MAP:
 					TableMapEventData data = event.tableMapData();
-					tableCache.processEvent(getSchema(), this.filter, data.getTableId(), data.getDatabase(), data.getTable());
+					tableCache.processEvent(getSchema(), this.filter,this.ignoreMissingSchema, data.getTableId(), data.getDatabase(), data.getTable());
 					break;
 				case QUERY:
 					QueryEventData qe = event.queryData();
@@ -721,6 +734,22 @@ public class BinlogConnectorReplicator extends RunLoopProcess implements Replica
 						rowBuffer.setSchemaId(getSchemaId());
 					} else {
 						processQueryEvent(event);
+					}
+					break;
+				case MARIADB_GTID:
+					// in mariaDB the GTID event supplants the normal BEGIN
+					MariadbGtidEventData g = event.mariaGtidData();
+					if ( (g.getFlags() & MariadbGtidEventData.FL_STANDALONE) == 0 ) {
+						try {
+							rowBuffer = getTransactionRows(event);
+						} catch ( ClientReconnectedException e ) {
+							// rowBuffer should already be empty by the time we get to this switch
+							// statement, but we null it for clarity
+							rowBuffer = null;
+							break;
+						}
+						rowBuffer.setServerId(event.getEvent().getHeader().getServerId());
+						rowBuffer.setSchemaId(getSchemaId());
 					}
 					break;
 				case ROTATE:

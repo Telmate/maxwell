@@ -1,5 +1,5 @@
 FROM maven:3.6-jdk-11 as builder
-ENV MAXWELL_VERSION=1.38.0 KAFKA_VERSION=1.0.0
+ENV MAXWELL_VERSION=1.39.2 KAFKA_VERSION=1.0.0
 
 RUN apt-get update \
     && apt-get -y upgrade \
@@ -22,11 +22,12 @@ RUN cd /workspace \
 FROM openjdk:11-jdk-slim
 
 COPY --from=builder /app /app
+COPY --from=builder /REVISION /REVISION
 
 WORKDIR /app
 
 RUN useradd -u 1000 maxwell -d /app
-RUN chown 1000:1000 /app && echo "$MAXWELL_VERSION" > /REVISION
+RUN chown 1000:1000 /app
 
 USER 1000
 

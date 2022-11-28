@@ -118,6 +118,7 @@ pubsub_platform_id             | STRING     | Google Cloud platform id associate
 ddl_pubsub_topic               | STRING     | Google Cloud pub-sub topic to send DDL events to |
 pubsub_request_bytes_threshold | LONG       | Set number of bytes until batch is send | 1
 pubsub_message_count_batch_size| LONG       | Set number of messages until batch is send | 1
+pubsub_message_ordering_key    | STRING     | Google Cloud pub-sub ordering key template (also enables message ordering when set) |
 pubsub_publish_delay_threshold | LONG       | Set time passed in millis until batch is send | 1
 pubsub_retry_delay             | LONG       | Controls the delay in millis before sending the first retry message | 100
 pubsub_retry_delay_multiplier  | FLOAT      | Controls the increase in retry delay per retry | 1.3
@@ -126,6 +127,7 @@ pubsub_initial_rpc_timeout     | LONG       | Controls the timeout in seconds fo
 pubsub_rpc_timeout_multiplier  | FLOAT      | Controls the change in RPC timeout | 1.0
 pubsub_max_rpc_timeout         | LONG       | Puts a limit on the value in seconds of the RPC timeout | 600
 pubsub_total_timeout           | LONG       | Puts a limit on the value in seconds of the retry delay, so that the RetryDelayMultiplier can't increase the retry delay higher than this amount | 600
+pubsub_emulator                | STRING     | Google Cloud pub-sub emulator host to send events to |
 
 _See also:_ [PubSub Producer Documentation](/producers#google-cloud-pubsub)
 
@@ -146,6 +148,7 @@ rabbitmq_pass                  | STRING     | Password of Rabbitmq connection | 
 rabbitmq_host                  | STRING     | Host of Rabbitmq machine
 rabbitmq_port                  | INT        | Port of Rabbitmq machine |
 rabbitmq_virtual_host          | STRING     | Virtual Host of Rabbitmq |
+rabbitmq_handshake_timeout     | STRING     | Handshake timeout of Rabbitmq connection in milliseconds |
 rabbitmq_exchange              | STRING     | Name of exchange for rabbitmq publisher |
 rabbitmq_exchange_type         | STRING     | Exchange type for rabbitmq |
 rabbitmq_exchange_durable      | BOOLEAN    | Exchange durability. | false
@@ -240,7 +243,7 @@ _See also:_ [Monitoring](/monitoring)
 option                         | argument                            | description                                         | default
 -------------------------------|-------------------------------------| --------------------------------------------------- | -------
 bootstrapper                   | [async &#124; sync &#124; none]                   | bootstrapper type.  See [bootstrapping docs](/bootstrapping).        | async
-init_position                  | FILE:POSITION[:HEARTBEAT]           | ignore the information in maxwell.positions and start at the given binlog position. Not available in config.properties. |
+init_position                  | FILE:POSITION[:HEARTBEAT]           | ignore the information in maxwell.positions and start at the given binlog position. Not available in config.properties. [see note](/deployment#-init_position)|
 replay                         | BOOLEAN                             | enable maxwell's read-only "replay" mode: don't store a binlog position or schema changes.  Not available in config.properties. |
 buffer_memory_usage            | FLOAT                               | Determines how much memory the Maxwell event buffer will use from the jvm max memory. Size of the buffer is: buffer_memory_usage * -Xmx" | 0.25
 http_config                    | BOOLEAN                             | enable http config endpoint for config updates without restart | false
