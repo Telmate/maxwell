@@ -299,7 +299,7 @@ public class SchemaCapturer implements AutoCloseable {
 	private void detectMariaDBJSON(Schema schema) throws SQLException, InvalidSchemaError {
 		String checkConstraintSQL = "SELECT CONSTRAINT_SCHEMA, TABLE_NAME, CONSTRAINT_NAME, CHECK_CLAUSE " +
 			"from INFORMATION_SCHEMA.CHECK_CONSTRAINTS " +
-			"where LEVEL='column' and CHECK_CLAUSE LIKE 'json_valid(%)'";
+			"where CHECK_CLAUSE LIKE 'json_valid(%)'";
 
 		String regex = "json_valid\\(`(.*)`\\)";
 		Pattern pattern = Pattern.compile(regex);
