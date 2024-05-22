@@ -112,6 +112,7 @@ default_value: DEFAULT
   | CURRENT_TIMESTAMP current_timestamp_length?
   | now_function
   | localtime_function
+  | uuid_function
   | skip_parens );
 
 length: '(' INTEGER_LITERAL ')';
@@ -122,3 +123,5 @@ now_function: NOW now_function_length;
 now_function_length: length | '(' ')';
 current_timestamp_length: length | '(' ')';
 localtime_function: (LOCALTIME | LOCALTIMESTAMP) ('(' ')')?;
+uuid_function: UUID uuid_function;
+uuid_function_length: length | '(' ')';
