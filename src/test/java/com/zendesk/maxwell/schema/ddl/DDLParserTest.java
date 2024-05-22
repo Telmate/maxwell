@@ -260,7 +260,20 @@ public class DDLParserTest {
 			"ALTER TABLE t1 DROP PARTITION IF EXISTS p3", // some mariada-fu
 			"ALTER TABLE t1 DROP CONSTRAINT ck",
 			"ALTER TABLE t1 DROP CHECK ck",
-			"create table test ( i float default -1. )"
+			"create table test ( i float default -1. )",
+			"alter database d ENCRYPTION='Y'",
+			"ALTER TABLE t1 ADD COLUMN IF NOT EXISTS c1 TINYINT",
+			"ALTER TABLE tournaments ADD INDEX idx_team_name (('$.teams.name'))",
+			"ALTER TABLE tournaments ADD INDEX idx_team_name ((ABS(col)))",
+			"ALTER TABLE tournaments ADD INDEX idx_team_name ((col1 * 40) DESC)",
+			"CREATE TABLE employees (data JSON, INDEX idx ((CAST(data->>'$.name' AS CHAR(30)) COLLATE utf8mb4_bin)))",
+			"ALTER TABLE tasks DROP COLUMN IF EXISTS snoozed_until",
+			"ALTER TABLE outgoing_notifications_log ADD INDEX idx_campaign_updated (campaign, last_updated_at) ALGORITHM=NOCOPY,LOCK=NONE",
+			"alter table test.c ALGORITHM=COPY, STATS_SAMPLE_PAGES=DEFAULT",
+			"ALTER TABLE vehicles " +
+				"DROP INDEX IF EXISTS uq_vehicles_oem_id_oem_vin," +
+				"ALGORITHM=NOCOPY, LOCK=NONE"
+
 		};
 
 		for ( String s : testSQL ) {
@@ -618,5 +631,19 @@ public class DDLParserTest {
 
 		assertThat(changes,is(nullValue()));
 
+	}
+
+	@Test
+	public void testServerInstanceOperations(){
+
+		List<SchemaChange> parse = parse("ALTER INSTANCE ROTATE INNODB MASTER KEY");
+		List<SchemaChange> parse1 = parse("ALTER INSTANCE ROTATE BINLOG MASTER KEY");
+		List<SchemaChange> parse2 = parse("ALTER INSTANCE RELOAD TLS");
+		List<SchemaChange> parse3 = parse("ALTER INSTANCE RELOAD TLS NO ROLLBACK ON ERROR");
+
+		assertThat(parse,is(nullValue()));
+		assertThat(parse1,is(nullValue()));
+		assertThat(parse2,is(nullValue()));
+		assertThat(parse3,is(nullValue()));
 	}
 }

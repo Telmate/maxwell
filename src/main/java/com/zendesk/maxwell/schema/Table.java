@@ -243,6 +243,10 @@ public class Table {
 		columns.add(columns.size(), definition);
 	}
 
+	public void addColumns(List<ColumnDef> definitions) {
+		columns.addAll(definitions);
+	}
+
 	public void removeColumn(int idx) {
 		ColumnDef toRemove = columns.get(idx);
 		removePKColumn(toRemove.getName());
@@ -250,6 +254,9 @@ public class Table {
 	}
 
 	public void renameColumn(int idx, String name) throws InvalidSchemaError {
+		ColumnDef oldColumn = columns.get(idx);
+		renamePKColumn(oldColumn.getName(), name);
+
 		ColumnDef column = columns.get(idx).withName(name);
 		columns.replace(idx, column);
 	}

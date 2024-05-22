@@ -586,7 +586,6 @@ public class BinlogConnectorReplicator extends RunLoopProcess implements Replica
 								buffer.add(r);
 							}
 					}
-					currentQuery = null;
 					break;
 				case TABLE_MAP:
 					TableMapEventData data = event.tableMapData();
@@ -626,6 +625,9 @@ public class BinlogConnectorReplicator extends RunLoopProcess implements Replica
 						// Ignore temporary table drop statements inside transactions
 					} else if ( upperCaseSql.startsWith("# DUMMY EVENT")) {
 						// MariaDB injected event
+					} else if ( upperCaseSql.equals("ROLLBACK") ) {
+						LOGGER.debug("rolling back transaction inside binlog.");
+						return new RowMapBuffer(0);
 					} else {
 						LOGGER.warn("Unhandled QueryEvent @ {} inside transaction: {}", event.getPosition().fullPosition(), qe);
 					}

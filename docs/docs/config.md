@@ -188,6 +188,7 @@ output_server_id               | BOOLEAN  | records include server_id           
 output_thread_id               | BOOLEAN  | records include thread_id                  | false
 output_schema_id               | BOOLEAN  | records include schema_id, schema_id is the id of the latest schema tracked by maxwell and doesn't relate to any mysql tracked value                  | false
 output_row_query               | BOOLEAN  | records include INSERT/UPDATE/DELETE statement. Mysql option "binlog_rows_query_log_events" must be enabled | false
+row_query_max_length           | INT      | The maximum number of characters output in the "query" field. The rest will be truncated.
 output_primary_keys            | BOOLEAN  | DML records include list of values that make up a row's primary key | false
 output_primary_key_columns     | BOOLEAN  | DML records include list of columns that make up a row's primary key | false
 output_ddl                     | BOOLEAN  | output DDL (table-alter, table-create, etc) events  | false
@@ -236,6 +237,7 @@ metrics_datadog_apikey   | STRING | the datadog api key to use when metrics_data
 metrics_datadog_site     | STRING | the site to publish metrics to when metrics_datadog_type = `http` | us
 metrics_datadog_host     | STRING | the host to publish metrics to when metrics_datadog_type = `udp` | localhost
 metrics_datadog_port     | INT | the port to publish metrics to when metrics_datadog_type = `udp` | 8125
+custom_health.factory	| CLASS_NAME                          | fully qualified maxwell health check factory class, see [example](https://github.com/zendesk/maxwell/blob/master/src/example/com/zendesk/maxwell/example/maxwellhealthcheckfactory/CustomMaxwellHealthCheckFactory.java) |
 
 _See also:_ [Monitoring](/monitoring)
 

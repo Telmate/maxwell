@@ -4,7 +4,7 @@
 
   <groupId>com.zendesk</groupId>
   <artifactId>maxwell</artifactId>
-  <version>1.39.2</version>
+  <version>1.41.1</version>
   <packaging>jar</packaging>
 
   <name>maxwell</name>
@@ -41,9 +41,12 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <mockito.version>3.7.7</mockito.version>
+    <mockito.version>3.12.4</mockito.version>
     <opencensus.version>0.28.3</opencensus.version>
-    <aws-java.version>1.12.327</aws-java.version>
+    <aws-java.version>1.12.537</aws-java.version>
+    <jackson.version>2.15.2</jackson.version>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
   </properties>
 
   <profiles>
@@ -123,6 +126,19 @@
         </dependency>
       </dependencies>
     </profile>
+    <profile>
+      <id>kafka-3.4.0</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.kafka</groupId>
+          <artifactId>kafka-clients</artifactId>
+          <version>3.4.0</version>
+        </dependency>
+      </dependencies>
+    </profile>
   </profiles>
 
   <dependencies>
@@ -155,12 +171,17 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
-      <version>2.13.4</version>
+      <version>${jackson.version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>2.13.4.1</version>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <version>${jackson.version}</version>
     </dependency>
     <dependency>
       <groupId>org.jgroups</groupId>
@@ -210,9 +231,9 @@
       <version>1.13</version>
     </dependency>
     <dependency>
-      <groupId>net.jpountz.lz4</groupId>
-      <artifactId>lz4</artifactId>
-      <version>1.3.0</version>
+      <groupId>org.lz4</groupId>
+      <artifactId>lz4-java</artifactId>
+      <version>1.8.0</version>
     </dependency>
     <dependency>
       <groupId>me.tongfei</groupId>
@@ -220,6 +241,73 @@
       <version>0.6.0</version>
     </dependency>
 
+    <!-- producer libs -->
+    <dependency>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>google-cloud-bigquerystorage</artifactId>
+      <version>2.14.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>google-cloud-bigquery</artifactId>
+      <version>2.13.3</version>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-core</artifactId>
+      <version>${aws-java.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-sns</artifactId>
+      <version>${aws-java.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-sqs</artifactId>
+      <version>${aws-java.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-sts</artifactId>
+      <version>${aws-java.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>amazon-kinesis-producer</artifactId>
+      <version>0.15.7</version>
+    </dependency>
+    <dependency>
+      <groupId>javax.xml.bind</groupId>
+      <artifactId>jaxb-api</artifactId>
+      <version>2.3.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.rabbitmq</groupId>
+      <artifactId>amqp-client</artifactId>
+      <version>5.18.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>google-cloud-pubsub</artifactId>
+      <version>1.120.24</version>
+    </dependency>
+    <dependency>
+      <groupId>io.nats</groupId>
+      <artifactId>jnats</artifactId>
+      <version>2.8.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>3.21.7</version>
+    </dependency>
+    <dependency>
+      <groupId>redis.clients</groupId>
+      <artifactId>jedis</artifactId>
+      <version>3.5.1</version>
+    </dependency>
+    
     <!-- metrics -->
     <dependency>
       <groupId>io.dropwizard.metrics</groupId>
@@ -239,7 +327,7 @@
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-server</artifactId>
-      <version>10.0.12</version>
+      <version>10.0.14</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
@@ -282,73 +370,6 @@
         <groupId>io.opencensus</groupId>
         <artifactId>opencensus-exporter-stats-stackdriver</artifactId>
         <version>${opencensus.version}</version>
-    </dependency>
-
-    <!-- producer libs -->
-    <dependency>
-      <groupId>com.google.cloud</groupId>
-      <artifactId>google-cloud-bigquerystorage</artifactId>
-      <version>2.14.2</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.cloud</groupId>
-      <artifactId>google-cloud-bigquery</artifactId>
-      <version>2.13.3</version>
-    </dependency>
-    <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-core</artifactId>
-      <version>${aws-java.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-sns</artifactId>
-      <version>${aws-java.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-sqs</artifactId>
-      <version>${aws-java.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-sts</artifactId>
-      <version>${aws-java.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>amazon-kinesis-producer</artifactId>
-      <version>0.14.0</version>
-    </dependency>
-    <dependency>
-      <groupId>javax.xml.bind</groupId>
-      <artifactId>jaxb-api</artifactId>
-      <version>2.3.0</version>
-    </dependency>
-    <dependency>
-      <groupId>com.rabbitmq</groupId>
-      <artifactId>amqp-client</artifactId>
-      <version>5.7.3</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.cloud</groupId>
-      <artifactId>google-cloud-pubsub</artifactId>
-      <version>1.115.1</version>
-    </dependency>
-    <dependency>
-      <groupId>io.nats</groupId>
-      <artifactId>jnats</artifactId>
-      <version>2.8.0</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-java</artifactId>
-      <version>3.21.7</version>
-    </dependency>
-    <dependency>
-      <groupId>redis.clients</groupId>
-      <artifactId>jedis</artifactId>
-      <version>3.5.1</version>
     </dependency>
 
     <!-- test -->
@@ -399,6 +420,14 @@
           <autoReleaseAfterClose>true</autoReleaseAfterClose>
           <stagingProgressTimeoutMinutes>10</stagingProgressTimeoutMinutes>
           <keepStagingRepositoryOnCloseRuleFailure>true</keepStagingRepositoryOnCloseRuleFailure>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!-- Allow Mockito to access the test classe private variables -->
+          <argLine>--add-opens java.base/java.util=ALL-UNNAMED</argLine>
         </configuration>
       </plugin>
       <plugin>
