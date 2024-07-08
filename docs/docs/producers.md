@@ -247,9 +247,12 @@ The configurable properties for nats are:
 
 - `nats_url` - defaults to **nats://localhost:4222**
 - `nats_subject` - defaults to **%{database}.%{table}**
+- `nats_jetstream` - defaults to **false**
 
 `nats_subject` defines the Nats subject hierarchy to write to.  [Topic substitution](/producers#topic-substitution) is available.
 All non-alphanumeric characters in the substitued values will be replaced by underscores.
+
+`nats_jetstream` defines if we publish and wait for a response from Jetstream.
 
 # Google Cloud Pub/Sub
 ***

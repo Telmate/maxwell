@@ -557,6 +557,11 @@ public class MaxwellConfig extends AbstractConfig {
 	public String natsSubject;
 
 	/**
+	 * {@link com.zendesk.maxwell.producer.NatsProducer} Nat use JetStream publish
+	 */
+	public boolean natsJetstream;
+
+	/**
 	 * {@link com.zendesk.maxwell.producer.MaxwellRedisProducer} host
 	 */
 	public String redisHost;
@@ -898,6 +903,7 @@ public class MaxwellConfig extends AbstractConfig {
 
 		parser.accepts( "nats_url", "Url(s) of Nats connection (comma separated). Default is localhost:4222" ).withRequiredArg();
 		parser.accepts( "nats_subject", "Subject Hierarchies of Nats. Default is '%{database}.%{table}'" ).withRequiredArg();
+		parser.accepts( "nats_jetstream", "Publish and wait for a response from Jetstream. Default: false" ).withOptionalArg();
 
 		parser.section( "bigquery" );
 		parser.accepts( "bigquery_project_id", "provide a google cloud platform project id associated with the bigquery table" )
@@ -1110,6 +1116,7 @@ public class MaxwellConfig extends AbstractConfig {
 
 		this.natsUrl			= fetchStringOption("nats_url", options, properties, "nats://localhost:4222");
 		this.natsSubject		= fetchStringOption("nats_subject", options, properties, "%{database}.%{table}");
+		this.natsJetstream  = fetchBooleanOption("nats_jetstream", options, properties, false);
 
 		this.redisHost			= fetchStringOption("redis_host", options, properties, "localhost");
 		this.redisPort			= fetchIntegerOption("redis_port", options, properties, 6379);

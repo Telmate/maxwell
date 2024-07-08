@@ -4,8 +4,11 @@ import com.zendesk.maxwell.MaxwellContext;
 import com.zendesk.maxwell.row.RowMap;
 import com.zendesk.maxwell.util.TopicInterpolator;
 import io.nats.client.Connection;
+import io.nats.client.JetStream;
 import io.nats.client.Nats;
 import io.nats.client.Options;
+import io.nats.client.api.PublishAck;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,6 +22,7 @@ public class NatsProducer extends AbstractProducer {
 	private final Logger LOGGER = LoggerFactory.getLogger(NatsProducer.class);
 	private final Connection natsConnection;
 	private final String natsSubjectTemplate;
+	private final JetStream jsConnection;
 
 	public NatsProducer(MaxwellContext context) {
 		super(context);
@@ -31,6 +35,12 @@ public class NatsProducer extends AbstractProducer {
 
 		try {
 			this.natsConnection = Nats.connect(option);
+			// in JetStream mode, get jetStream connection for publishing
+			if (context.getConfig().natsJetstream) {
+				this.jsConnection = this.natsConnection.jetStream();
+			} else {
+				this.jsConnection = null;
+			}
 		} catch (IOException | InterruptedException e) {
 			throw new RuntimeException(e);
 		}
@@ -53,8 +63,14 @@ public class NatsProducer extends AbstractProducer {
 			LOGGER.error("->  nats message size (" + messageBytes.length + ") > max payload size (" + maxPayloadSize + ")");
 			return;
 		}
-
-		natsConnection.publish(natsSubject, messageBytes);
+		if (jsConnection != null) {
+			PublishAck pubAck = jsConnection.publish(natsSubject, messageBytes);
+			if (LOGGER.isDebugEnabled()) {
+				LOGGER.debug("->  publish stream:{}, sequence:{}", pubAck.getStream(), pubAck.getSeqno());
+			}
+		} else {
+			natsConnection.publish(natsSubject, messageBytes);
+		}
 		if (r.isTXCommit()) {
 			context.setPosition(r.getNextPosition());
 		}
