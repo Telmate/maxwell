@@ -1,6 +1,7 @@
 package com.zendesk.maxwell.producer;
 
 import com.zendesk.maxwell.MaxwellContext;
+import com.zendesk.maxwell.replication.Position;
 import com.zendesk.maxwell.row.RowMap;
 import com.zendesk.maxwell.util.TopicInterpolator;
 import io.nats.client.Connection;
@@ -16,6 +17,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class NatsProducer extends AbstractProducer {
 
@@ -23,6 +28,9 @@ public class NatsProducer extends AbstractProducer {
 	private final Connection natsConnection;
 	private final String natsSubjectTemplate;
 	private final JetStream jsConnection;
+	private int pubCount;
+	private Position checkPoint;
+
 
 	public NatsProducer(MaxwellContext context) {
 		super(context);
@@ -36,6 +44,8 @@ public class NatsProducer extends AbstractProducer {
 		Options option = optionBuilder.build();
 
 		this.natsSubjectTemplate = context.getConfig().natsSubject;
+		this.pubCount = 0;
+		this.checkPoint = null;
 
 		try {
 			this.natsConnection = Nats.connect(option);
@@ -68,13 +78,29 @@ public class NatsProducer extends AbstractProducer {
 			return;
 		}
 		if (jsConnection != null) {
-			PublishAck pubAck = jsConnection.publish(natsSubject, messageBytes);
-			if (LOGGER.isDebugEnabled()) {
-				LOGGER.debug("->  publish stream:{}, sequence:{}", pubAck.getStream(), pubAck.getSeqno());
+			CompletableFuture<PublishAck> futPubAck = jsConnection.publishAsync(natsSubject, messageBytes);
+			// check every 100 messages, especially the first
+			if ((pubCount % 100) == 0) {				
+				try {
+					PublishAck pubAck = futPubAck.get(5, TimeUnit.SECONDS);
+					if (LOGGER.isDebugEnabled()) {
+						LOGGER.debug("->  publish stream:{}, sequence:{}", pubAck.getStream(), pubAck.getSeqno());
+					}	
+					checkPoint = context.getPosition();
+				} catch (TimeoutException | ExecutionException | InterruptedException e) {
+						LOGGER.error("Error: {} on publish: {} to jetstream subject: {}", e, pubCount, natsSubject);
+						// attempt rewind to last checkPoint
+						if (checkPoint != null) {
+							LOGGER.warn("Rewinding to checkpoint: {}", checkPoint);
+							context.setPosition(checkPoint);
+						}
+						throw e;
+				}
 			}
 		} else {
 			natsConnection.publish(natsSubject, messageBytes);
 		}
+		pubCount++;
 		if (r.isTXCommit()) {
 			context.setPosition(r.getNextPosition());
 		}
