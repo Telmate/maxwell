@@ -28,7 +28,7 @@ public class NatsProducer extends AbstractProducer {
 	private final Connection natsConnection;
 	private final String natsSubjectTemplate;
 	private final JetStream jsConnection;
-	private int pubCount;
+	private long pubCount;
 	private Position checkPoint;
 
 
