@@ -79,13 +79,15 @@ public class NatsProducer extends AbstractProducer {
 		}
 		if (jsConnection != null) {
 			CompletableFuture<PublishAck> futPubAck = jsConnection.publishAsync(natsSubject, messageBytes);
+
+
 			// check every 100 messages, especially the first
-			if ((pubCount % 100) == 0) {				
+			if ((pubCount % 100) == 0) {
 				try {
 					PublishAck pubAck = futPubAck.get(5, TimeUnit.SECONDS);
 					if (LOGGER.isDebugEnabled()) {
 						LOGGER.debug("->  publish stream:{}, sequence:{}", pubAck.getStream(), pubAck.getSeqno());
-					}	
+					}
 					checkPoint = context.getPosition();
 				} catch (TimeoutException | ExecutionException | InterruptedException e) {
 						LOGGER.error("Error: {} on publish: {} to jetstream subject: {}", e, pubCount, natsSubject);
@@ -96,6 +98,11 @@ public class NatsProducer extends AbstractProducer {
 						}
 						throw e;
 				}
+			} else {
+				futPubAck.exceptionally((fe) -> {
+					LOGGER.warn("Ack Error: {}, you should probably rewind to checkpoint: {}", fe, checkPoint);
+					return null;
+				});
 			}
 		} else {
 			natsConnection.publish(natsSubject, messageBytes);
