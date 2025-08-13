@@ -213,6 +213,16 @@ public class MaxwellConfig extends AbstractConfig {
 	public String snsAttrs;
 
 	/**
+	 * {@link com.zendesk.maxwell.producer.MaxwellSQSProducer} Queue Service Endpoint URL
+	 */
+	public String snsServiceEndpoint;
+
+	/**
+	 * {@link com.zendesk.maxwell.producer.MaxwellSQSProducer} Queue Signing region
+	 */
+	public String snsSigningRegion;
+
+	/**
 	 * {@link com.zendesk.maxwell.producer.MaxwellPubsubProducer} project id
 	 */
 	public String pubsubProjectId;
@@ -545,6 +555,10 @@ public class MaxwellConfig extends AbstractConfig {
 	 */
 	public boolean rabbitmqDeclareExchange;
 
+	/**
+	 * {@link com.zendesk.maxwell.producer.RabbitmqProducer} use SSL
+	 */
+	public boolean rabbitmqUseSSL;
 
 	/**
 	 * {@link com.zendesk.maxwell.producer.NatsProducer} URL
@@ -873,7 +887,7 @@ public class MaxwellConfig extends AbstractConfig {
 
 		parser.separator();
 
-		parser.accepts( "kafka_version", "kafka client library version: 0.8.2.2|0.9.0.1|0.10.0.1|0.10.2.1|0.11.0.1|1.0.0|2.7.0|3.4.0")
+		parser.accepts( "kafka_version", "kafka client library version: 0.8.2.2|0.9.0.1|0.10.0.1|0.10.2.1|0.11.0.1|1.0.0|2.7.0|3.4.0|3.7.1")
 				.withRequiredArg();
 		parser.accepts( "kafka_key_format", "how to format the kafka key; array|hash" )
 				.withRequiredArg();
@@ -903,6 +917,11 @@ public class MaxwellConfig extends AbstractConfig {
 		parser.accepts("sns_attrs", "Comma separated fields to add as message attributes: \"database, table\"")
 				.withOptionalArg();
 		parser.separator();
+
+		parser.accepts( "sns_service_endpoint", "SNS Service Endpoint" )
+				.withRequiredArg();
+		parser.accepts( "sns_signing_region", "SNS Signing region" )
+				.withRequiredArg();
 
 		parser.addToSection("producer_partition_by");
 		parser.addToSection("producer_partition_columns");
@@ -973,6 +992,7 @@ public class MaxwellConfig extends AbstractConfig {
 		parser.accepts( "rabbitmq_routing_key_template", "A string template for the routing key, '%db%' and '%table%' will be substituted. Default is '%db%.%table%'." ).withRequiredArg();
 		parser.accepts( "rabbitmq_message_persistent", "Message persistence. Defaults to false" ).withOptionalArg();
 		parser.accepts( "rabbitmq_declare_exchange", "Should declare the exchange for rabbitmq publisher. Defaults to true" ).withOptionalArg();
+		parser.accepts( "rabbitmq_use_ssl", "If true, will connect to the server using SSL. Defaults to false" ).withOptionalArg();
 
 		parser.section( "redis" );
 
@@ -1125,6 +1145,7 @@ public class MaxwellConfig extends AbstractConfig {
 		this.rabbitmqRoutingKeyTemplate   	= fetchStringOption("rabbitmq_routing_key_template", options, properties, "%db%.%table%");
 		this.rabbitmqMessagePersistent    	= fetchBooleanOption("rabbitmq_message_persistent", options, properties, false);
 		this.rabbitmqDeclareExchange		= fetchBooleanOption("rabbitmq_declare_exchange", options, properties, true);
+		this.rabbitmqUseSSL			= fetchBooleanOption("rabbitmq_use_ssl", options, properties, false);
 
 		this.natsUrl			= fetchStringOption("nats_url", options, properties, "nats://localhost:4222");
 		this.natsSubject		= fetchStringOption("nats_subject", options, properties, "%{database}.%{table}");
@@ -1178,6 +1199,10 @@ public class MaxwellConfig extends AbstractConfig {
 
 		this.snsTopic = fetchStringOption("sns_topic", options, properties, null);
 		this.snsAttrs = fetchStringOption("sns_attrs", options, properties, null);
+
+		this.snsServiceEndpoint = fetchStringOption("sns_service_endpoint", options, properties, null);
+		this.snsSigningRegion = fetchStringOption("sns_signing_region", options, properties, null);
+
 		this.outputFile = fetchStringOption("output_file", options, properties, null);
 
 		this.metricsPrefix = fetchStringOption("metrics_prefix", options, properties, "MaxwellMetrics");

@@ -1,5 +1,70 @@
 # Maxwell changelog
 
+### [v1.44.0](https://github.com/zendesk/maxwell/releases/tag/v1.44.0)
+
+- Quite a few dependency upgrades
+
+
+
+_Released 2025-06-25_
+
+### [v1.43.2](https://github.com/zendesk/maxwell/releases/tag/v1.43.2)
+
+- fix more dependency issues in 1.43.1
+- fix parsing error for mysql heatwave
+
+
+
+_Released 2025-03-12_
+
+### [v1.43.1](https://github.com/zendesk/maxwell/releases/tag/v1.43.1)
+
+- fix kafka breakage
+
+
+
+_Released 2025-03-05_
+
+### [v1.42.3](https://github.com/zendesk/maxwell/releases/tag/v1.42.3)
+
+- Pull in an updated binlog-connector-java, notably fixing a major
+  problem with mariadb GTIDs
+
+
+
+_Released 2025-01-18_
+
+### [v1.42.2](https://github.com/zendesk/maxwell/releases/tag/v1.42.2)
+
+- update jdk on docker image
+- support rabbitmq + SSL
+- small fixes for latest maria
+- get tests running under mysql 8.4
+- remove Kinesis internal TTL, see #2147 for details
+- support bootstrapping from a replica that doesn't contain the maxwell database
+
+
+
+_Released 2025-01-09_
+
+### [v1.42.1](https://github.com/zendesk/maxwell/releases/tag/v1.42.1)
+
+- bugfix for 1.42.0, mysql 8.0.x and "SHOW BINARY LOG STATUS"
+
+
+
+_Released 2024-12-21_
+
+### [v1.42.0](https://github.com/zendesk/maxwell/releases/tag/v1.42.0)
+
+- initial support for mysql 8.4
+- support partitioning for sns and sqs
+- bugfix for maria
+
+
+
+_Released 2024-12-17_
+
 ### [v1.41.2](https://github.com/zendesk/maxwell/releases/tag/v1.41.2)
 
 - Owen Derby is the Nick Clarke of Maxwell parser bugs

@@ -1,5 +1,8 @@
 package com.zendesk.maxwell.producer;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.handlers.AsyncHandler;
 import com.amazonaws.services.sns.AmazonSNSAsync;
 import com.amazonaws.services.sns.AmazonSNSAsyncClientBuilder;
@@ -7,6 +10,7 @@ import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.amazonaws.services.sns.model.PublishRequest;
 import com.amazonaws.services.sns.model.PublishResult;
 import com.zendesk.maxwell.MaxwellContext;
+import com.zendesk.maxwell.producer.partitioners.MaxwellSNSPartitioner;
 import com.zendesk.maxwell.replication.Position;
 import com.zendesk.maxwell.row.RowMap;
 import org.apache.commons.lang3.ArrayUtils;
@@ -22,11 +26,26 @@ public class MaxwellSNSProducer extends AbstractAsyncProducer {
 	private String topic;
 	private String[] stringFelds = {"database", "table"};
 	private String[] numberFields = {"ts", "xid"};
+	private MaxwellSNSPartitioner partitioner;
 
-	public MaxwellSNSProducer(MaxwellContext context, String topic) {
+	public MaxwellSNSProducer(MaxwellContext context, String topic, String serviceEndpoint, String signingRegion) {
 		super(context);
 		this.topic = topic;
-		this.client = AmazonSNSAsyncClientBuilder.defaultClient();
+
+		// Only configure custom endpoint if both serviceEndpoint and signingRegion are provided
+		if (serviceEndpoint != null && !serviceEndpoint.trim().isEmpty() &&
+			signingRegion != null && !signingRegion.trim().isEmpty()) {
+			this.client = AmazonSNSAsyncClientBuilder.standard()
+					.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(serviceEndpoint, signingRegion))
+					.build();
+		} else {
+			// Use default client configuration when endpoint parameters are not provided
+			this.client = AmazonSNSAsyncClientBuilder.defaultClient();
+		}
+		String partitionKey = context.getConfig().producerPartitionKey;
+		String partitionColumns = context.getConfig().producerPartitionColumns;
+		String partitionFallback = context.getConfig().producerPartitionFallback;
+		this.partitioner = new MaxwellSNSPartitioner(partitionKey, partitionColumns, partitionFallback);
 	}
 
 	public void setClient(AmazonSNSAsync client) {
@@ -61,11 +80,13 @@ public class MaxwellSNSProducer extends AbstractAsyncProducer {
 		}
 
 		if ( topic.endsWith(".fifo")) {
-			publishRequest.setMessageGroupId(r.getDatabase());
+			String key = this.partitioner.getSNSKey(r);
+			publishRequest.setMessageGroupId(key);
 		}
 		publishRequest.setMessageAttributes(messageAttributes);
 
-		SNSCallback callback = new SNSCallback(cc, r.getNextPosition(), value, context);
+		SNSCallback callback = new SNSCallback(cc, r.getNextPosition(), value,
+			r.getDatabase(), r.getTable(), r.getRowIdentity().toConcatString(), r.getApproximateSize(), context);
 		client.publishAsync(publishRequest, callback);
 	}
 
@@ -77,19 +98,29 @@ class SNSCallback implements AsyncHandler<PublishRequest, PublishResult> {
 	private final AbstractAsyncProducer.CallbackCompleter cc;
 	private final Position position;
 	private final String json;
+	private final String database;
+	private final String table;
+	private final String pk;
+	private final long approximateRowSize;
 	private MaxwellContext context;
 
 	public SNSCallback(AbstractAsyncProducer.CallbackCompleter cc, Position position, String json,
+			String database, String table, String pk, long approximateRowSize,
 			MaxwellContext context) {
 		this.cc = cc;
 		this.position = position;
 		this.json = json;
 		this.context = context;
+		this.database = database;
+		this.table = table;
+		this.pk = pk;
+		this.approximateRowSize = approximateRowSize;
 	}
 
 	@Override
 	public void onError(Exception t) {
 		logger.error(t.getClass().getSimpleName() + " @ " + position + " -- ");
+		logger.error("Database:" + database + ", Table:" + table + ", PK:" + pk + ", Approx Size:" + Long.toString(approximateRowSize));
 		logger.error(t.getLocalizedMessage());
 		logger.error("Exception during put", t);
 
